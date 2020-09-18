@@ -43,48 +43,48 @@ narok <- read_excel("/Users/ndubaijacklinemwendwa/Desktop/twiga data/narok analy
 summary(narok)
 
 #Cleaning the data
-## Return the column names containing missing observations
-list_na <- colnames(narok)[ apply(narok, 2, anyNA) ]
-list_na
-
-# Create mean
-average_missing <- apply(narok[,colnames(narok) %in% list_na],
-                         2,
-                         mean,
-                         na.rm =  TRUE)
-average_missing
-
-# Quick code to replace missing values with the mean
-narok_impute_mean <- data.frame(
-  sapply(
-    narok,
-    function(x) ifelse(is.na(x),
-                       mean(x, na.rm = TRUE),
-                       x)))
-#View(narok_impute_mean)
-
-#Export to excel
-# library("writexl")
-# write_xlsx(narok_impute_mean,"/Users/ndubaijacklinemwendwa/Desktop/twiga data/narok analysis/narok_impute_mean.xlsx")
-
-#Group by year
-narok_by_year<-aggregate(.~narok_impute_mean$Year, narok_impute_mean[c(3:14)], sum)
-View(narok_by_year)
-
-#reshape data
-res <- reshape(narok_by_year, direction="long", varying=list(2:13), v.names=c("Rainfall"), times = month.name, timevar = "Month")
-colnames(res)[1]<-"Year"
-narok_res<-res[-c(0,4)]
-view(narok_res)
-
-#Creating date column
-narok_res$Date <- as.yearmon(paste(narok_res$Month,narok_res$Year)) 
-narok_res<-narok_res[-c(1:2)]
-narok_res<-mutate(narok_res, narok_res$Date <- as.Date(narok_res$Date, format= "%Y-%m-%d"))
-narok_data<-narok_res[-c(2)]
-colnames(narok_data)[2]<-"Date"
-class(narok_data$Date)
-class(narok_data$Rainfall)
+      ## Return the column names containing missing observations
+      list_na <- colnames(narok)[ apply(narok, 2, anyNA) ]
+      list_na
+      
+      # Create mean
+      average_missing <- apply(narok[,colnames(narok) %in% list_na],
+                               2,
+                               mean,
+                               na.rm =  TRUE)
+      average_missing
+      
+      # Quick code to replace missing values with the mean
+      narok_impute_mean <- data.frame(
+        sapply(
+          narok,
+          function(x) ifelse(is.na(x),
+                             mean(x, na.rm = TRUE),
+                             x)))
+      #View(narok_impute_mean)
+      
+      #Export to excel
+      # library("writexl")
+      # write_xlsx(narok_impute_mean,"/Users/ndubaijacklinemwendwa/Desktop/twiga data/narok analysis/narok_impute_mean.xlsx")
+      
+      #Group by year
+      narok_by_year<-aggregate(.~narok_impute_mean$Year, narok_impute_mean[c(3:14)], sum)
+      View(narok_by_year)
+      
+      #reshape data
+      res <- reshape(narok_by_year, direction="long", varying=list(2:13), v.names=c("Rainfall"), times = month.name, timevar = "Month")
+      colnames(res)[1]<-"Year"
+      narok_res<-res[-c(0,4)]
+      view(narok_res)
+      
+      #Creating date column
+      narok_res$Date <- as.yearmon(paste(narok_res$Month,narok_res$Year)) 
+      narok_res<-narok_res[-c(1:2)]
+      narok_res<-mutate(narok_res, narok_res$Date <- as.Date(narok_res$Date, format= "%Y-%m-%d"))
+      narok_data<-narok_res[-c(2)]
+      colnames(narok_data)[2]<-"Date"
+      class(narok_data$Date)
+      class(narok_data$Rainfall)
 
 # plot the data using ggplot
 ggplot(data = narok_data, aes(x = Date, y = Rainfall)) +
@@ -123,67 +123,66 @@ Fs <- round(max(0,1 - (var(Rt)/var(St + Rt))),1)
 data.frame('Trend Strength'= Ft , 'Seasonal Strength' =Fs)
 
 #SEASONAL ANALYSIS   
-#Seasonal Plot
-seasonplot(narok_ts, year.labels = TRUE, col = 1:13, 
-           main =  "Seasonal Plot", ylab= "Rainfall (mm)",xlab = "Month")
-
-#Seasonal Sub-Series Plot
-seasplot(narok_ts, outplot = 3, trend = FALSE, 
-         main = "Seasonal Subseries Plot", ylab= "Rainfall (mm)",xlab = "Month")
-
-#Seasonal Boxplot
-seasplot(narok_ts, outplot = 2, trend = FALSE, 
-         main = "Seasonal Box Plot", ylab= "Rainfall (mm)",xlab = "Month")
+      #Seasonal Plot
+      seasonplot(narok_ts, year.labels = TRUE, col = 1:13, 
+                 main =  "Seasonal Plot", ylab= "Rainfall (mm)",xlab = "Month")
+      
+      #Seasonal Sub-Series Plot
+      seasplot(narok_ts, outplot = 3, trend = FALSE, 
+               main = "Seasonal Subseries Plot", ylab= "Rainfall (mm)",xlab = "Month")
+      
+      #Seasonal Boxplot
+      seasplot(narok_ts, outplot = 2, trend = FALSE, 
+               main = "Seasonal Box Plot", ylab= "Rainfall (mm)",xlab = "Month")
 
 ## UASIN GISHU DATA
 #Import Data
 UAG <- read.csv('~/Desktop/twiga data/narok analysis/Uasin Gishu rainfall 1981-2020.csv')
 
-#Remove first column
-UAG<- UAG[-c(1)]
-View(UAG)
-summary(UAG)
-
 #Cleaning the data
-## Return the column names containing missing observations
-list_na <- colnames(UAG)[ apply(UAG, c(1,2), anyNA) ]
-list_na
-
-#reshape data
-YearDate <- as.Date(UAG$Date, format= "%d/%m/%Y")
-UAG<-mutate(UAG, YearDate)
-class(UAG$YearDate)
-UAG$Year <- format(as.Date(UAG$YearDate), "%Y")
-UAG$Month <- format(as.Date(UAG$YearDate), "%m")
-UAG<-UAG[-c(1,3)]
-
-#Sum by year
-UAG_by_monthyear<-aggregate(.~UAG$Year+UAG$Month, UAG[c(1)], sum)
-colnames(UAG_by_monthyear)[1]<-"Year"
-colnames(UAG_by_monthyear)[2]<-"Month"
-colnames(UAG_by_monthyear)[3]<-"Rainfall"
-UAG_by_monthyear<-UAG_by_monthyear[order(as.Date(UAG_by_monthyear$Month, format="%m")),]
-View(UAG_by_monthyear)
-
-#Make months columns
-UAG_res <- reshape(UAG_by_monthyear, idvar="Year",timevar = "Month",direction="wide")
-monthnames<-month.abb
-colnames(UAG_res)[c(2:13)]<-monthnames
-
-#reshape data
-UAG_res <- reshape(UAG_res, direction="long", varying=list(2:13), v.names=c("Rainfall"), times = month.name, timevar = "Month")
-UAG_res<-UAG_res[-c(4)]
-view(UAG_res)
-
-#Creating class date and year column
-UAG_res$Date <- as.yearmon(paste(UAG_res$Month,UAG_res$Year))
-UAG_res<-UAG_res[-c(1:2)]
-UAG_res<-mutate(UAG_res, UAG_res$Date <- as.Date(UAG_res$Date, format= "%Y-%m-%d"))
-UAG_data<-UAG_res[-c(2)]
-colnames(UAG_data)[2]<-"Date"
-class(UAG_data$Date)
-class(UAG_data$Rainfall)
-view(UAG_data)
+      #Remove first column
+      UAG<- UAG[-c(1)]
+      View(UAG)
+      summary(UAG)
+      # Return the column names containing missing observations
+      list_na <- colnames(UAG)[ apply(UAG, c(1,2), anyNA) ]
+      list_na
+      
+      #reshape data
+      YearDate <- as.Date(UAG$Date, format= "%d/%m/%Y")
+      UAG<-mutate(UAG, YearDate)
+      class(UAG$YearDate)
+      UAG$Year <- format(as.Date(UAG$YearDate), "%Y")
+      UAG$Month <- format(as.Date(UAG$YearDate), "%m")
+      UAG<-UAG[-c(1,3)]
+      
+      #Sum by year
+      UAG_by_monthyear<-aggregate(.~UAG$Year+UAG$Month, UAG[c(1)], sum)
+      colnames(UAG_by_monthyear)[1]<-"Year"
+      colnames(UAG_by_monthyear)[2]<-"Month"
+      colnames(UAG_by_monthyear)[3]<-"Rainfall"
+      UAG_by_monthyear<-UAG_by_monthyear[order(as.Date(UAG_by_monthyear$Month, format="%m")),]
+      View(UAG_by_monthyear)
+      
+      #Make months columns
+      UAG_res <- reshape(UAG_by_monthyear, idvar="Year",timevar = "Month",direction="wide")
+      monthnames<-month.abb
+      colnames(UAG_res)[c(2:13)]<-monthnames
+      
+      #reshape data
+      UAG_res <- reshape(UAG_res, direction="long", varying=list(2:13), v.names=c("Rainfall"), times = month.name, timevar = "Month")
+      UAG_res<-UAG_res[-c(4)]
+      view(UAG_res)
+      
+      #Creating class date and year column
+      UAG_res$Date <- as.yearmon(paste(UAG_res$Month,UAG_res$Year))
+      UAG_res<-UAG_res[-c(1:2)]
+      UAG_res<-mutate(UAG_res, UAG_res$Date <- as.Date(UAG_res$Date, format= "%Y-%m-%d"))
+      UAG_data<-UAG_res[-c(2)]
+      colnames(UAG_data)[2]<-"Date"
+      class(UAG_data$Date)
+      class(UAG_data$Rainfall)
+      view(UAG_data)
 
 # plot the data using ggplot
 ggplot(data = UAG_data, aes(x = Date, y = Rainfall)) +
@@ -194,11 +193,11 @@ ggplot(data = UAG_data, aes(x = Date, y = Rainfall)) +
        subtitle = "UAG Rainfall 2005 - 2019")+
   scale_x_date(limits = c(as.Date("2005-01-01","%Y-%m-%d"),as.Date("2019-01-01","%Y-%m-%d")),labels = date_format("%b-%Y"), date_breaks=("1 year"))
 
-# #Converting dataframe To Time Series
+#Converting dataframe To Time Series
 UAG_data<-UAG_data[order(as.Date(UAG_data$Date, format="%Y-%m-%d")),]
 UAG_ts <- ts(UAG_data$Rainfall,frequency = 12,start = c(1981,1),end=c(2019,12))
 
-# #Selecting Data 
+#Selecting Data 
 UAG_ts <- window(UAG_ts, start=c(2005,1),end=c(2019,12))
 UAG_ts
 str(UAG_ts)
@@ -221,14 +220,14 @@ Fs <- round(max(0,1 - (var(Rt)/var(St + Rt))),1)
 data.frame('Trend Strength'= Ft , 'Seasonal Strength' =Fs)
 
 #SEASONAL ANALYSIS   
-#Seasonal Plot
-seasonplot(UAG_ts, year.labels = TRUE, col = 1:13, 
-           main =  "Seasonal Plot", ylab= "Rainfall (mm2)",xlab = "Month")
-
-#Seasonal Sub-Series Plot
-seasplot(UAG_ts, outplot = 3, trend = FALSE, 
-         main = "Seasonal Subseries Plot", ylab= "Rainfall (mm)",xlab = "Month")
-
-#Seasonal Boxplot
-seasplot(UAG_ts, outplot = 2, trend = FALSE, 
-         main = "Seasonal Box Plot", ylab= "Rainfall (mm)",xlab = "Month")
+      #Seasonal Plot
+      seasonplot(UAG_ts, year.labels = TRUE, col = 1:13, 
+                 main =  "Seasonal Plot", ylab= "Rainfall (mm2)",xlab = "Month")
+      
+      #Seasonal Sub-Series Plot
+      seasplot(UAG_ts, outplot = 3, trend = FALSE, 
+               main = "Seasonal Subseries Plot", ylab= "Rainfall (mm)",xlab = "Month")
+      
+      #Seasonal Boxplot
+      seasplot(UAG_ts, outplot = 2, trend = FALSE, 
+               main = "Seasonal Box Plot", ylab= "Rainfall (mm)",xlab = "Month")
