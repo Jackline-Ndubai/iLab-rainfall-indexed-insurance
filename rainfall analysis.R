@@ -138,29 +138,51 @@ data.frame('Trend Strength'= Ft , 'Seasonal Strength' =Fs)
 ## UASIN GISHU DATA
 #Import Data
 UAG <- read.csv('~/Desktop/twiga data/narok analysis/Uasin Gishu rainfall 1981-2020.csv')
-
+view(UAG)
 #Cleaning the data
-      #Remove first column
-      UAG<- UAG[-c(1)]
-      View(UAG)
-      summary(UAG)
       # Return the column names containing missing observations
       list_na <- colnames(UAG)[ apply(UAG, c(1,2), anyNA) ]
       list_na
+      # Create mean
+      average_missing <- apply(UAG[,colnames(UAG) %in% list_na],
+                               2,
+                               mean,
+                               na.rm =  TRUE)
+      average_missing
+      
+      # Quick code to replace missing values with the mean
+      UAG_impute_mean <- data.frame(
+        sapply(
+          UAG,
+          function(x) ifelse(is.na(x),
+                             mean(x, na.rm = TRUE),
+                             x)))
+      View(UAG_impute_mean)
+      
+      #Export to excel
+      # library("writexl")
+      # write_xlsx(UAG_impute_mean,"/Users/ndubaijacklinemwendwa/Desktop/twiga data/narok analysis/UAG_impute_mean.xlsx")
+
+      #Remove first column
+      UAG_impute_mean<- UAG_impute_mean[-c(1)]
+      summary(UAG_impute_mean)
       
       #reshape data
-      YearDate <- as.Date(UAG$Date, format= "%d/%m/%Y")
-      UAG<-mutate(UAG, YearDate)
-      class(UAG$YearDate)
-      UAG$Year <- format(as.Date(UAG$YearDate), "%Y")
-      UAG$Month <- format(as.Date(UAG$YearDate), "%m")
-      UAG<-UAG[-c(1,3)]
+      YearDate <- as.Date(UAG_impute_mean$Date, format= "%d/%m/%Y")
+      UAG_impute_mean<-mutate(UAG_impute_mean, YearDate)
+      class(UAG_impute_mean$YearDate)
+      Rainfall<-as.numeric(as.character(UAG_impute_mean$Rainfall.mm.))
+      UAG_impute_mean<-mutate(UAG_impute_mean, Rainfall)
+      class(UAG_impute_mean$Rainfall)
+      UAG_impute_mean$Year <- format(as.Date(UAG_impute_mean$YearDate), "%Y")
+      UAG_impute_mean$Month <- format(as.Date(UAG_impute_mean$YearDate), "%m")
+      UAG_impute_mean<-UAG_impute_mean[-c(1:3)]
+      View(UAG_impute_mean)
       
       #Sum by year
-      UAG_by_monthyear<-aggregate(.~UAG$Year+UAG$Month, UAG[c(1)], sum)
+      UAG_by_monthyear<-aggregate(.~UAG_impute_mean$Year+UAG_impute_mean$Month, UAG_impute_mean[c(1)], sum)
       colnames(UAG_by_monthyear)[1]<-"Year"
       colnames(UAG_by_monthyear)[2]<-"Month"
-      colnames(UAG_by_monthyear)[3]<-"Rainfall"
       UAG_by_monthyear<-UAG_by_monthyear[order(as.Date(UAG_by_monthyear$Month, format="%m")),]
       View(UAG_by_monthyear)
       
@@ -222,7 +244,7 @@ data.frame('Trend Strength'= Ft , 'Seasonal Strength' =Fs)
 #SEASONAL ANALYSIS   
       #Seasonal Plot
       seasonplot(UAG_ts, year.labels = TRUE, col = 1:13, 
-                 main =  "Seasonal Plot", ylab= "Rainfall (mm2)",xlab = "Month")
+                 main =  "Seasonal Plot", ylab= "Rainfall (mm)",xlab = "Month")
       
       #Seasonal Sub-Series Plot
       seasplot(UAG_ts, outplot = 3, trend = FALSE, 
