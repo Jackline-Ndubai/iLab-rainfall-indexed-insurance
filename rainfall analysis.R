@@ -10,14 +10,17 @@ remove(list = ls())
 # install.packages("urca")
 # install.packages("ggfortify")
 # install.packages("tsutils")
-# install.packages("hydroTSM")
 # install.packages("writexl")
 # install.packages("zoo")
-#install.packages("caret")
-# install.packages("hrbrthemes")
-install.packages("ggpubr")
-# library(hrbrthemes)
+# install.packages("caret")
+# install.packages("data.table")
+# install.packages("olsrr")
+# install.packages("ggpubr")
+install.packages("heatmaply")
 
+library(devtools)
+library(data.table)
+library(olsrr)
 library(lubridate)
 library(ggplot2)
 theme_set(theme_bw())
@@ -29,13 +32,13 @@ library(readxl)
 library(urca)
 library(ggfortify)
 library(tsutils)
-library(hydroTSM)
 library(writexl)
 library(zoo)
 library(scales)
 library(caret)
 library(tidyr)
 library(ggpubr)
+library(heatmaply)
 
 options(stringsAsFactors = FALSE)
 
@@ -182,12 +185,17 @@ view(UAG)
       UAG_impute_mean<-UAG_impute_mean[-c(1:3)]
       View(UAG_impute_mean)
 
-      #Sum by year
+      #Sum by month and year
       UAG_by_monthyear<-aggregate(.~UAG_impute_mean$Year+UAG_impute_mean$Month, UAG_impute_mean[c(1)], sum)
       colnames(UAG_by_monthyear)[1]<-"Year"
       colnames(UAG_by_monthyear)[2]<-"Month"
       UAG_by_monthyear<-UAG_by_monthyear[order(as.Date(UAG_by_monthyear$Month, format="%m")),]
       View(UAG_by_monthyear)
+      
+      ## For use later in corr models>> Sum by Year only
+      UAG_by_year<-aggregate(.~UAG_by_monthyear$Year, UAG_by_monthyear[c(3)], sum)
+      colnames(UAG_by_year)[1]<-"Year"
+      view(UAG_by_year)
 
       #Make months columns
       UAG_res <- reshape(UAG_by_monthyear, idvar="Year",timevar = "Month",direction="wide")
@@ -260,16 +268,16 @@ data.frame('Trend Strength'= Ft , 'Seasonal Strength' =Fs)
 # MAIZE YIELD DATA ANALYSIS
       #Cleaning the data
       maize_data <- read.csv("/Users/ndubaijacklinemwendwa/Desktop/twiga data/narok analysis/FAOSTAT_data_8-22-2020.csv")
-      view(maize_data)
+      # view(maize_data)
       summary(maize_data)
       
       ##Remove columns not needed
       maize_data<-maize_data[-c(1:5,7:9,11,13,14)]
-      view(maize_data)
+      # view(maize_data)
       
       ##Reshape data
       maize_data_res <- reshape(maize_data,idvar="Year",timevar = "Element",direction="wide")
-      view(maize_data_res)
+      # view(maize_data_res)
       
       ##Check for NAs
       list_na3 <- colnames(maize_data_res)[ apply(maize_data_res, 2, anyNA) ]
@@ -291,7 +299,6 @@ data.frame('Trend Strength'= Ft , 'Seasonal Strength' =Fs)
                              x)))
       colnames(maize_data_imputedmean)<-c("Year","Areaharvested","Yield","Production")
       view(maize_data_imputedmean)
-      str(maize_data_imputedmean)
       summary(maize_data_imputedmean)
       
       # Simple plot
@@ -300,15 +307,91 @@ data.frame('Trend Strength'= Ft , 'Seasonal Strength' =Fs)
         # geom_line(aes(y =Yield), color="steelblue", linetype="twodash") #+
         geom_line(aes(y =Production), color="green")
      
-       # plot(maize_data_imputedmean)
+      # Create combined yield rainfall df
+          str(UAG_by_year)
+          str(maize_data_imputedmean)
+          
+          #Change class to integer
+          UAG_by_year$Year<-as.integer(as.character(UAG_by_year$Year))
+          UAG_by_year$Rainfall<-as.integer(as.numeric(UAG_by_year$Rainfall))
+          str(UAG_by_year)
+          
+          #Combine dataframes by id=year
+          yield_rainfall <- merge(maize_data_imputedmean,UAG_by_year,by="Year")
+          yield_rainfall<-yield_rainfall[-c(2,4)]
+          rownames(yield_rainfall)<-yield_rainfall$Year
+          yield_rainfall<-yield_rainfall[-c(1)]
+          view(yield_rainfall)
       
-      #Export to excel
-      # library("writexl")
-      # write_xlsx(narok_impute_mean,"/Users/ndubaijacklinemwendwa/Desktop/twiga data/narok analysis/narok_impute_mean.xlsx")
-      
-      
-      
-      
-      
-      
-      
+      # # Check for multicollinearity
+      #     plot(yield_rainfall)
+          
+      # Normalize/ Standardize
+          heatmaply(
+            yield_rainfall, 
+            xlab = "Annual rainfal(mm)",
+            ylab = "Year", 
+            main = "Annual Yield/Rainfall plot"
+          )
+          
+          heatmaply(
+            scale(yield_rainfall), 
+            xlab = "Annual rainfal(mm)",
+            ylab = "Year", 
+            main = "Annual Yield/Rainfall plot"
+          )
+          
+          scaled_data<-scale(yield_rainfall)
+          view(scaled_data)
+          enframe(scaled_data)
+          
+      #     plot(scaled_data$Rainfall,scaled_data$Yield)
+      #     
+      #     boxplot(yield_rainfall$Yield~yield_rainfall$Rainfall, main="Maize Yields/Rainfall", xlab="Annual Rainfall (mm)", ylab="Yield (hg/ha)", col=rainbow(7))
+      #     
+      #     aov_fun<-aov(yield_rainfall$Yield~yield_rainfall$Rainfall) 
+      #     summary(aov_fun)
+      #     
+      #     model <- lm(Yield ~ Rainfall, data = yield_rainfall)
+      #     ols_coll_diag(model)
+      #     summary(model)
+      #     ols_plot_resid_fit_spread(model)
+      #     ols_correlations(model)
+      #     
+      #     modelquasipois<-glm(Yield ~ Rainfall, family = quasipoisson(link = log),  data = yield_rainfall)
+      #     summary(modelquasipois)
+      #     modelpois<-glm(Yield ~ Rainfall, family = poisson(link = log),  data = yield_rainfall)
+      #     summary(modelpois)
+      #     modelgauss<-glm(Yield ~ Rainfall, family = gaussian(link = identity),  data = yield_rainfall)
+      #     summary(modelgauss)
+      #     modelgamma<-glm(Yield ~ Rainfall, family = Gamma(link = inverse),  data = yield_rainfall)
+      #     summary(modelgamma)
+      #     modelinverse<-glm(Yield ~ Rainfall, family = inverse.gaussian(link = 1/mu^2),  data = yield_rainfall)
+      #     summary(modelinverse)
+      #     modelquasi<-glm(Yield ~ Rainfall, family = quasi(link = identity,variance = constant),  data = yield_rainfall)
+      #     summary(modelquasi)
+      #     
+      #     
+      #     anova(modelquasi,modelquasipois,modelpois,modelgauss,modelgamma,modelinverse)
+      #     anova(modelquasipois)
+      #     anova(modelpois)
+      #     anova(modelgauss)
+      #     anova(modelgamma)
+      #     anova(modelinverse)
+      #     
+      # linear_model <- lm(Yield ~ Annualrainfall, data = Data)
+      # summary(model)
+      # model1 <- glm(Yield ~ Annualrainfall, family = poisson(link = log),  data = Data)
+      # summary(model1)
+      #  # plot(maize_data_imputedmean)
+      # 
+      # #Export to excel
+      # # library("writexl")
+      # # write_xlsx(narok_impute_mean,"/Users/ndubaijacklinemwendwa/Desktop/twiga data/narok analysis/narok_impute_mean.xlsx")
+      # 
+      # 
+      # 
+      # 
+      # 
+      # 
+      # 
