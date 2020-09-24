@@ -46,7 +46,7 @@ options(stringsAsFactors = FALSE)
 ## NAROK DATA
 #Import Data
 narok <- read_excel("/Users/ndubaijacklinemwendwa/Desktop/twiga data/narok analysis/Narok rainfall (1960-2014).xlsx")
-# View(narok)
+View(narok)
 summary(narok)
 
 #Cleaning the data
@@ -54,29 +54,29 @@ summary(narok)
       ## Going into daily details
         #count number of times daily amounts were more than 40mm in each column
           dailyover_50mm <- ldply(narok[3:14], function(c) sum(c > 50,na.rm=T))
-          ggplot(dailyover_50mm, aes(x=.id, y=V1)) + 
-            geom_bar(stat="identity", colour="black", fill="red") + 
-            xlab("") + ylab("") 
-        
+          ggplot(dailyover_50mm, aes(x=.id, y=V1)) +
+            geom_bar(stat="identity", colour="black", fill="red") +
+            xlab("") + ylab("")
+
         #Impute daily amount over 50mm
           narok_nonseason<-apply(narok[c(3,4,8:12)], 2, function(x) ifelse(x > 50, 0.1*x, x))
           narok_inseason<-apply(narok[c(5:7,13,14)], 2, function(x) ifelse(x > 50, 0.5*x, x))
           # View(narok_nonseason)
           # View(narok_inseason)
           narok<-cbind(narok[c(1,2)],narok_nonseason,narok_inseason)
-          # View(narok)
-          
+          summary(narok)
+
         #Return the column names containing missing observations
         list_na <- colnames(narok)[ apply(narok, 2, anyNA) ]
         list_na
-  
+
         # Create mean
         average_missing <- apply(narok[,colnames(narok) %in% list_na],
                                  2,
                                  mean,
                                  na.rm =  TRUE)
         average_missing
-  
+
         # Quick code to replace missing values with the mean
         narok <- data.frame(
           sapply(
@@ -94,19 +94,21 @@ summary(narok)
       #Group by year
       narok_by_year<-aggregate(.~narok$Year, narok[c(3:14)], sum)
       View(narok_by_year)
+      summary(narok_by_year)
       
       narok_outliers<-narok_by_year # Copy old dataset
       outvalue<-list() # Create empty lists
       outindex<-list()
-      histvalue<-list()
+      # histvalue<-list()
       for (i in 2:ncol(narok_outliers)) { # For every column in dataset
-        histvalue[[i]]<-hist(narok_outliers[,i]) #Plot histogram
+        # histvalue[[i]]<-hist(narok_outliers[,i]) #Plot histogram
         outvalue[[i]]<-boxplot.stats(narok_outliers[,i])$out # Get the outlier value
         outindex[[i]]<-match(outvalue[[i]],narok_outliers[,i]) # Get the outlier index
-        narok_outliers[outindex[[i]],i] <- NA # Remove the outliers
+        # narok_outliers[outindex[[i]],i] <- NA # Remove the outliers
       }
       
       outvalue
+      outindex
       # View(narok_outliers)
       
       #Return the column names containing NA values
@@ -132,6 +134,8 @@ summary(narok)
       for (i in 2:ncol(narok_by_year)) { # For every column in your dataset
         histvalue[[i]]<-hist(narok_by_year[,i]) #Plot histogram
       }
+      
+      summary(narok_by_year)
       
       #reshape data
       narok_by_year<-narok_by_year[,c(1:3,9:11,4:8,12,13)] #reordering columns to follow according to month
