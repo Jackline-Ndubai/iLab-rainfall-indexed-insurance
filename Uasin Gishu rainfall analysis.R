@@ -1,34 +1,34 @@
-remove(list = ls())
+# remove(list = ls())
 
-library(plyr)
-library(devtools)
-library(data.table)
-library(olsrr)
-library(lubridate)
-library(ggplot2)
-theme_set(theme_bw())
-library(tidyverse)
-library(dplyr)
-library(astsa)
-library(forecast)
-library(readxl)
-library(urca)
-library(ggfortify)
-library(tsutils)
-library(writexl)
-library(zoo)
-library(scales)
-library(caret)
-library(tidyr)
-library(ggpubr)
-library(heatmaply)
-
-options(stringsAsFactors = FALSE)
+# library(plyr)
+# library(devtools)
+# library(data.table)
+# library(olsrr)
+# library(lubridate)
+# library(ggplot2)
+# theme_set(theme_bw())
+# library(tidyverse)
+# library(dplyr)
+# library(astsa)
+# library(forecast)
+# library(readxl)
+# library(urca)
+# library(ggfortify)
+# library(tsutils)
+# library(writexl)
+# library(zoo)
+# library(scales)
+# library(caret)
+# library(tidyr)
+# library(ggpubr)
+# library(heatmaply)
+# 
+# options(stringsAsFactors = FALSE)
 
 ## UASIN GISHU DATA
 #Import Data
   UAG <- read.csv('~/Desktop/twiga data/narok analysis/Uasin Gishu rainfall 1981-2020.csv')
-  view(UAG)
+  # view(UAG)
   summary(UAG)
 
   #Return the column names containing missing observations (before reshaping)
@@ -43,20 +43,20 @@ options(stringsAsFactors = FALSE)
   UAG<-UAG[order(as.Date(UAG$YearDate, format="%Y-%m-%d")),]
   class(UAG$YearDate)
   class(UAG$Rainfall)
-  view(UAG)
+  # view(UAG)
   
   #Adding Year, month and day columns
   UAG$Year <- format(as.Date(UAG$YearDate), "%Y")
   UAG$Month <- format(as.Date(UAG$YearDate), "%m")
   UAG$Day<- format(as.Date(UAG$YearDate), "%d")
   UAG<-UAG[-c(2)]
-  View(UAG)
+  # View(UAG)
   
   #Make months columns
   UAG<- reshape(UAG, idvar=c("Year","Day"),timevar = "Month",direction="wide")
   monthnames<-month.abb
   colnames(UAG)[c(3:14)]<-monthnames
-  View(UAG)
+  # View(UAG)
   summary(UAG)
 
 #Cleaning the data
@@ -112,7 +112,7 @@ options(stringsAsFactors = FALSE)
                            0,
                            # mean(x, na.rm = TRUE),
                            x)))
-    View(UAG)
+    # View(UAG)
 
 #Export to excel
 # library("writexl")
@@ -122,10 +122,20 @@ options(stringsAsFactors = FALSE)
   #Group by year
   UAG_rainfall<-sapply(UAG[c(3:14)],as.numeric) # convert character columns to numeric
   UAG<-cbind(UAG[,c(1:2)],UAG_rainfall[,c(1:12)]) #combine columns removed
-  View(UAG)
+  # View(UAG)
   UAG_by_year<-aggregate(.~UAG$Year, UAG[c(3:14)], sum)
-  View(UAG_by_year)
+  # View(UAG_by_year)
   summary(UAG_by_year)
+  
+    ## For use in regression model=> Sum by year
+      UAG_by_year_rainfall<- rowSums(UAG_by_year[, c(4:7)]) #taking 4 months from March
+      # View(UAG_by_year_rainfall)
+      UAG_by_year_regr<-cbind(UAG_by_year_rainfall,UAG_by_year[,1])
+      UAG_by_year_regr<-as.data.frame(UAG_by_year_regr)
+      colnames(UAG_by_year_regr)<-c("Rainfall","Year")
+      UAG_by_year_regr$Rainfall<-as.integer(as.character(UAG_by_year_regr$Rainfall))
+      UAG_by_year_regr$Year<-as.integer(as.character(UAG_by_year_regr$Year))
+      str(UAG_by_year_regr)
   
   #Check for outliers (monthly)
   UAG_out_monthly<-UAG_by_year # Copy old dataset
@@ -190,7 +200,7 @@ ggplot(data = UAG_data, aes(x = Date, y = Rainfall)) +
 
 # #Converting dataframe To Time Series
 UAG_data<-UAG_data[order(as.Date(UAG_data$Date, format="%Y-%m-%d")),]
-View(UAG_data)
+# View(UAG_data)
 UAG_ts <- ts(UAG_data$Rainfall,frequency = 12,start = c(1981,1),end=c(2020,12))
 
 # #Selecting Data

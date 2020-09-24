@@ -46,7 +46,7 @@ options(stringsAsFactors = FALSE)
 ## NAROK DATA
 #Import Data
 narok <- read_excel("/Users/ndubaijacklinemwendwa/Desktop/twiga data/narok analysis/Narok rainfall (1960-2014).xlsx")
-View(narok)
+# View(narok)
 summary(narok)
 
 #Cleaning the data
@@ -93,7 +93,7 @@ summary(narok)
       ## Going into yearly details  
       #Group by year
       narok_by_year<-aggregate(.~narok$Year, narok[c(3:14)], sum)
-      View(narok_by_year)
+      # View(narok_by_year)
       summary(narok_by_year)
       
       narok_outliers<-narok_by_year # Copy old dataset
@@ -110,6 +110,13 @@ summary(narok)
       outvalue
       outindex
       # View(narok_outliers)
+      
+      #Plotting histogram with outliers removed and gauge the difference
+      histvalue<-list()
+      for (i in 2:ncol(narok_by_year)) { # For every column in your dataset
+        histvalue[[i]]<-hist(narok_by_year[,i]) #Plot histogram
+      }
+      
       
       #Return the column names containing NA values
       list_na11 <- colnames(narok_outliers)[ apply(narok_outliers, 2, anyNA) ]
@@ -130,19 +137,25 @@ summary(narok)
                              mean(x, na.rm = TRUE),
                              x)))
       
-      #Plotting histogram with outliers removed and gauge the difference
-      for (i in 2:ncol(narok_by_year)) { # For every column in your dataset
-        histvalue[[i]]<-hist(narok_by_year[,i]) #Plot histogram
-      }
-      
       summary(narok_by_year)
+      # View(narok_by_year)
       
       #reshape data
       narok_by_year<-narok_by_year[,c(1:3,9:11,4:8,12,13)] #reordering columns to follow according to month
       res <- reshape(narok_by_year, direction="long", varying=list(2:13), v.names=c("Rainfall"), times = month.name, timevar = "Month") #Creating one month column with corresponding rainfall values
       colnames(res)[1]<-"Year"
       narok_res<-res[-c(0,4)]
-      # view(narok_res)
+      # View(narok_res)
+      
+      ## For use in regression model=> Sum by year
+      narok_by_year_rainfall<- rowSums(narok_by_year[, c(3:6)]) #taking 4 months from February
+      # View(narok_by_year_rainfall)
+      narok_by_year_regr<-cbind(narok_by_year_rainfall,narok_by_year[,1])
+      narok_by_year_regr<-as.data.frame(narok_by_year_regr)
+      colnames(narok_by_year_regr)<-c("Rainfall","Year")
+      narok_by_year_regr$Rainfall<-as.integer(as.character(narok_by_year_regr$Rainfall))
+      narok_by_year_regr$Year<-as.integer(as.character(narok_by_year_regr$Year))
+      str(narok_by_year_regr)
 
       #Creating date column
       narok_res$Date <- as.yearmon(paste(narok_res$Month,narok_res$Year))
@@ -151,7 +164,7 @@ summary(narok)
       class(narok_res$Date)
       # View(narok_res)
       narok_data<-narok_res
-      View(narok_data)
+      # View(narok_data)
       class(narok_data$Date)
       class(narok_data$Rainfall)
 
