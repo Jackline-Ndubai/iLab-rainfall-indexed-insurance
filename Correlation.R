@@ -1,4 +1,5 @@
 # MAIZE YIELD DATA ANALYSIS
+# install.packages("fitdistrplus")
 #Import data
   maize_data <- read.csv("/Users/ndubaijacklinemwendwa/Desktop/twiga data/narok analysis/FAOSTAT_data_8-22-2020.csv")
   # View(maize_data)
@@ -76,13 +77,6 @@
     #   ylab = "Year", 
     #   main = "Annual Yield/Rainfall plot"
     # )
-    # 
-    # heatmaply(
-    #   scale(yield_rainfall), 
-    #   xlab = "Annual rainfal(mm)",
-    #   ylab = "Year", 
-    #   main = "Annual Yield/Rainfall plot"
-    # )
     
     standardized_data<-as.data.frame(scale(yield_rainfall))
     normalized_data<-as.data.frame(normalize(yield_rainfall))
@@ -93,32 +87,48 @@
     View(standardized_data)
     View(normalized_data)
     
-    # Fitting a model
-    model <- lm(Yield~ UAG_rainfall + Narok_rainfall, data = yield_rainfall)
+    # heatmaply(
+    #   scale(yield_rainfall), 
+    #   xlab = "Annual rainfal(mm)",
+    #   ylab = "Year", 
+    #   main = "Annual Yield/Rainfall plot"
+    # )
+   
+# Fitting a linear model
+    model <- lm(Production~ UAG_rainfall + Narok_rainfall, data = yield_rainfall)
     ols_coll_diag(model)
     summary(model)
     
-    # Fitting a model
-    model <- lm(Production~ UAG_rainfall + Narok_rainfall, data = standardized_data)
-    ols_coll_diag(model)
-    summary(model)
+# Fitting a model
+    library(fitdistrplus)
+    descdist(yield_rainfall$Production)
+    descdist(yield_rainfall$Yield) 
+    descdist(yield_rainfall$Areaharvested) 
+    descdist(yield_rainfall$UAG_rainfall)
+    descdist(yield_rainfall$Narok_rainfall)
+    
+    ## more checks
+    hist(yield_rainfall$Production, # histogram
+         col="gray", # column color
+         border="black",
+         prob = TRUE, # show densities instead of frequencies
+         xlab = "Production",
+         main = "Annual Production")
+    lines(density(yield_rainfall$Production), # density plot
+          lwd = 2, # thickness of line
+          col = "chocolate3")
+    
+    # Fit normal distribution
+    modelgauss<-glm(Production~ UAG_rainfall + Narok_rainfall, family = gaussian(link = identity),  data = yield_rainfall)
+    summary(modelgauss)
+    summary(residuals(modelgauss))
+    
     # ols_plot_resid_fit_spread(model)
     # ols_correlations(model)
 
-    install.packages("fitdistrplus")
-    descdist(yield_rainfall$Yield)    
-    modelquasipois<-glm(Areaharvested~ UAG_rainfall + Narok_rainfall, family = quasipoisson(link = log),  data = normalized_data)
-        summary(modelquasipois)
-        modelpois<-glm(Areaharvested~ UAG_rainfall + Narok_rainfall, family = poisson(link = log),  data = normalized_data)
-        summary(modelpois)
-        modelgauss<-glm(Yield~ UAG_rainfall + Narok_rainfall, family = gaussian(link = identity),  data = standardized_data)
-        summary(modelgauss)
-        modelgamma<-glm(Areaharvested~ UAG_rainfall + Narok_rainfall, family = Gamma(link = inverse),  data = normalized_data)
-        summary(modelgamma)
-        modelinverse<-glm(Areaharvested~ UAG_rainfall + Narok_rainfall, family = inverse.gaussian(link = 1/mu^2),  data = normalized_data)
-        summary(modelinverse)
-        modelquasi<-glm(Yield ~ Rainfall, family = quasi(link = identity,variance = constant),  data = yield_rainfall)
-        summary(modelquasi)
+
+  
+        
 
 #     aov_fun<-aov(yield_rainfall$Yield~yield_rainfall$Rainfall) 
 #     summary(aov_fun)
